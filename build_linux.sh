@@ -1,16 +1,18 @@
 #!/usr/bin/env bash
-# Build standalone Linux executable
 set -e
 
 cd "$(dirname "$0")"
 
-echo "Building Linux executable..."
+echo "Building optimized Linux binary..."
 uv run pyinstaller \
   --noconsole \
   --onefile \
-  --name "obs-sermon-controller" \
+  --name "obs-titler" \
+  --exclude-module PySide6.QtWebEngineCore \
+  --exclude-module PySide6.QtPdf \
+  --exclude-module PySide6.QtQuick3D \
   --add-data "main.qml:." \
   main.py
 
 echo ""
-echo "Done! Executable is located at: dist/obs-sermon-controller"
+echo "Done! Binary is located at: dist/obs-titler"

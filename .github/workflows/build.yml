@@ -3,16 +3,16 @@ name: Build and Release
 on:
   push:
     tags:
-      - 'v*' # Triggers automatically when you push a tag like v1.0.0
+      - 'v*'
   workflow_dispatch:
     inputs:
       tag_name:
-        description: 'Release Tag (e.g. v1.0.0)'
+        description: 'Release Tag (e.g. v0.0.3)'
         required: true
-        default: 'v1.0.0'
+        default: 'v0.0.3'
 
 permissions:
-  contents: write # Required to create releases and upload assets
+  contents: write
 
 jobs:
   build:
@@ -23,13 +23,11 @@ jobs:
       matrix:
         include:
           - os: windows-latest
-            built_path: dist/obs-sermon-controller.exe
-            release_asset: obs-sermon-controller-windows.exe
             data_sep: ";"
+            ext: ".exe"
           - os: ubuntu-latest
-            built_path: dist/obs-sermon-controller
-            release_asset: obs-sermon-controller-linux
             data_sep: ":"
+            ext: ""
 
     steps:
       - name: Check out repository
@@ -43,26 +41,48 @@ jobs:
       - name: Set up Python
         run: uv python install 3.12
 
-      - name: Install dependencies
+      - name: Install dependencies (Essentials only)
         run: |
           uv sync
           uv add --dev pyinstaller
 
-      - name: Build standalone executable
+      - name: Build Fast Instant-Launch Directory (--onedir)
         run: |
-          uv run pyinstaller --noconsole --onefile --name "obs-sermon-controller" --add-data "main.qml${{ matrix.data_sep }}." main.py
+          uv run pyinstaller --noconsole --onedir --name "obs-titler" --exclude-module PySide6.QtWebEngineCore --exclude-module PySide6.QtPdf --exclude-module PySide6.QtQuick3D --add-data "main.qml${{ matrix.data_sep }}." main.py
 
-      - name: Rename binary for release
+      - name: Build Lightweight Portable Single File (--onefile)
+        run: |
+          uv run pyinstaller --noconsole --onefile --name "obs-titler-portable" --exclude-module PySide6.QtWebEngineCore --exclude-module PySide6.QtPdf --exclude-module PySide6.QtQuick3D --add-data "main.qml${{ matrix.data_sep }}." main.py
+
+      - name: Package Assets (Windows)
+        if: runner.os == 'Windows'
         shell: bash
         run: |
           mkdir -p release_assets
-          cp "${{ matrix.built_path }}" "release_assets/${{ matrix.release_asset }}"
+          # Zip the instant-launch directory
+          cd dist
+          7z a ../release_assets/obs-titler-windows.zip obs-titler
+          cd ..
+          # Copy portable single-file exe
+          cp dist/obs-titler-portable.exe release_assets/obs-titler-windows-portable.exe
 
-      - name: Upload temporary build artifact
+      - name: Package Assets (Linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          mkdir -p release_assets
+          # Tar the instant-launch directory
+          cd dist
+          tar -czf ../release_assets/obs-titler-linux.tar.gz obs-titler
+          cd ..
+          # Copy portable single-file binary
+          cp dist/obs-titler-portable release_assets/obs-titler-linux-portable
+
+      - name: Upload temporary build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.release_asset }}
-          path: release_assets/${{ matrix.release_asset }}
+          name: assets-${{ matrix.os }}
+          path: release_assets/*
 
   publish-release:
     name: Publish GitHub Release

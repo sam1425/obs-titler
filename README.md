@@ -1,4 +1,4 @@
-# OBS Sermon Controller
+# OBS Titler
 
 A fast, distraction-free desktop utility to control lower-third text in OBS Studio during live services.
 
@@ -6,9 +6,19 @@ Built with Python and QtQuick (QML). Runs standalone on Windows and Linux withou
 
 ---
 
+## Downloads
+
+Precompiled binaries are available on the [Releases](https://github.com/sam1425/obs-titler/releases) page:
+
+* **Windows Instant Launch (`obs-titler-windows.zip`):** Unzip and run `obs-titler.exe`. Launches in under 1 second with zero decompression delay.
+* **Windows Portable (`obs-titler-windows-portable.exe`):** Single standalone file.
+* **Linux:** Available as `obs-titler-linux.tar.gz` and `obs-titler-linux-portable`.
+
+---
+
 ## How It Works
 
-Type the sermon title and speaker, hit **Save** (or press `Enter`), and the app writes them to text files inside `obs_output/`:
+Type the sermon title and speaker, hit **Guardar en OBS / Save to OBS** (or press `Enter`), and the app writes them to text files inside `obs_output/`:
 
 * `sermon_title.txt` — Current title
 * `sermon_speaker.txt` — Speaker / host name
@@ -32,8 +42,8 @@ OBS reads directly from these files. Whenever you save, OBS updates the graphics
 Requires [uv](https://github.com/astral-sh/uv) (or standard Python 3.10+):
 
 ```bash
-git clone https://github.com/your-username/obs-sermon-controller.git
-cd obs-sermon-controller
+git clone https://github.com/sam1425/obs-titler.git
+cd obs-titler
 uv run main.py
 ```
 
@@ -41,28 +51,12 @@ uv run main.py
 
 ## Building Binaries
 
-Both platforms bundle Python and Qt into a single executable using PyInstaller.
-
 ### Linux
 ```bash
 ./build_linux.sh
 ```
-Output: `dist/obs-sermon-controller`
 
 ### Windows
-Run:
 ```cmd
 build_windows.bat
-```
-Output: `dist\obs-sermon-controller.exe`
-
----
-
-## Automated Releases
-
-Pushing a version tag triggers the GitHub Actions workflow in `.github/workflows/build.yml`. It compiles both Windows and Linux binaries and publishes them directly to a GitHub Release:
-
-```bash
-git tag v1.0.0
-git push origin v1.0.0
 ```

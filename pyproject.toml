@@ -5,7 +5,7 @@ description = "Minimal desktop overlay controller for OBS Studio"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-    "pyside6>=6.5.0",
+    "pyside6-essentials>=6.5.0",
 ]
 
 [dependency-groups]
