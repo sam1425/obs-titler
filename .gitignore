@@ -15,3 +15,7 @@ build/
 
 # Application runtime text output
 obs_output/
+
+# Lockfile
+uv.lock
+
