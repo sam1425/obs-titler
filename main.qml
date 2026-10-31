@@ -10,8 +10,41 @@ ApplicationWindow {
     height: 410
     minimumWidth: 400
     minimumHeight: 370
-    title: appCtrl.strings.title
 
+    // Reference to Python controller with null-safety
+    property var ctrl: (typeof appCtrl !== "undefined" && appCtrl) ? appCtrl : null
+
+    // Safe translation lookup helper
+    function tr(key) {
+        if (ctrl && ctrl.strings && ctrl.strings[key] !== undefined) {
+            return ctrl.strings[key];
+        }
+        return defaultStrings[key] || "";
+    }
+
+    // Fallback strings so QML never throws TypeErrors during initial load
+    readonly property var defaultStrings: ({
+        title: "Detalles del Sermón",
+        subtitle: "Actualiza fuentes de texto en vivo en OBS Studio",
+        sermon_title_label: "Título",
+        sermon_title_placeholder: "Ingresa el título del sermón...",
+        speaker_label: "Orador / Persona que habla",
+        speaker_placeholder: "Ingresa el nombre del orador...",
+        clear_btn: "Limpiar",
+        save_btn: "Guardar en OBS",
+        saved_toast: "Guardado en OBS",
+        error_toast: "Error al guardar archivos",
+        settings_btn: "Ajustes",
+        settings_title: "Configuración",
+        language_label: "Idioma",
+        output_folder_label: "Carpeta de salida OBS",
+        default_folder_hint: "(Por defecto: obs_output)",
+        browse_btn: "Examinar...",
+        reset_btn: "Restablecer",
+        close_btn: "Listo"
+    })
+
+    title: tr("title")
     color: "#09090b"
 
     Component.onCompleted: titleInput.forceActiveFocus()
@@ -31,17 +64,21 @@ ApplicationWindow {
 
             Behavior on opacity { NumberAnimation { duration: 150 } }
 
-            // Header with Settings Trigger
-            RowLayout {
+            // Header - Using direct anchors to firmly lock settings button to the right edge
+            Item {
                 Layout.fillWidth: true
-                spacing: 12
+                Layout.preferredHeight: Math.max(headerTextCol.height, settingsBtn.height)
 
-                ColumnLayout {
-                    Layout.fillWidth: true
+                Column {
+                    id: headerTextCol
+                    anchors.left: parent.left
+                    anchors.right: settingsBtn.left
+                    anchors.rightMargin: 16
+                    anchors.verticalCenter: parent.verticalCenter
                     spacing: 4
 
                     Label {
-                        text: appCtrl.strings.title
+                        text: tr("title")
                         font.pixelSize: 20
                         font.weight: Font.DemiBold
                         font.family: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
@@ -49,19 +86,20 @@ ApplicationWindow {
                     }
 
                     Label {
-                        text: appCtrl.strings.subtitle
+                        text: tr("subtitle")
                         font.pixelSize: 12
                         font.family: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
                         color: "#71717a"
                     }
                 }
 
-                // Settings Gear Button
+                // Settings Gear Button - Anchored to the far right
                 Rectangle {
                     id: settingsBtn
-                    Layout.preferredWidth: 34
-                    Layout.preferredHeight: 34
-                    Layout.alignment: Qt.AlignRight | Qt.AlignTop
+                    anchors.right: parent.right
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: 36
+                    height: 36
                     radius: 8
                     color: settingsMouse.containsPress ? "#27272a" : (settingsMouse.containsMouse ? "#1f1f23" : "#141417")
                     border.color: "#27272a"
@@ -83,7 +121,6 @@ ApplicationWindow {
                             ctx.arc(8, 8, 4, 0, 2 * Math.PI);
                             ctx.stroke();
 
-                            // 6 teeth
                             for (var i = 0; i < 6; i++) {
                                 var angle = (i * Math.PI) / 3;
                                 var x1 = 8 + Math.cos(angle) * 4.5;
@@ -119,7 +156,7 @@ ApplicationWindow {
                     spacing: 7
 
                     Label {
-                        text: appCtrl.strings.sermon_title_label
+                        text: tr("sermon_title_label")
                         font.pixelSize: 13
                         font.weight: Font.Medium
                         font.family: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
@@ -152,7 +189,7 @@ ApplicationWindow {
                             onAccepted: speakerInput.forceActiveFocus()
 
                             Text {
-                                text: appCtrl.strings.sermon_title_placeholder
+                                text: tr("sermon_title_placeholder")
                                 color: "#52525b"
                                 font.pixelSize: 14
                                 visible: !titleInput.text && !titleInput.activeFocus
@@ -169,7 +206,7 @@ ApplicationWindow {
                     spacing: 7
 
                     Label {
-                        text: appCtrl.strings.speaker_label
+                        text: tr("speaker_label")
                         font.pixelSize: 13
                         font.weight: Font.Medium
                         font.family: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
@@ -202,7 +239,7 @@ ApplicationWindow {
                             onAccepted: saveBtn.triggerSave()
 
                             Text {
-                                text: appCtrl.strings.speaker_placeholder
+                                text: tr("speaker_placeholder")
                                 color: "#52525b"
                                 font.pixelSize: 14
                                 visible: !speakerInput.text && !speakerInput.activeFocus
@@ -248,7 +285,7 @@ ApplicationWindow {
 
                     Text {
                         anchors.centerIn: parent
-                        text: appCtrl.strings.clear_btn
+                        text: tr("clear_btn")
                         color: clearBtn.activeFocus ? "#ffffff" : "#a1a1aa"
                         font.pixelSize: 13
                         font.weight: Font.Medium
@@ -280,11 +317,11 @@ ApplicationWindow {
                     Behavior on color { ColorAnimation { duration: 80 } }
 
                     function triggerSave() {
-                        var success = appCtrl.saveToFiles(titleInput.text, speakerInput.text)
+                        var success = ctrl ? ctrl.saveToFiles(titleInput.text, speakerInput.text) : true
                         if (success) {
-                            toast.show(appCtrl.strings.saved_toast)
+                            toast.show(tr("saved_toast"))
                         } else {
-                            toast.showError(appCtrl.strings.error_toast)
+                            toast.showError(tr("error_toast"))
                         }
                     }
 
@@ -293,7 +330,7 @@ ApplicationWindow {
 
                     Text {
                         anchors.centerIn: parent
-                        text: appCtrl.strings.save_btn
+                        text: tr("save_btn")
                         color: "#09090b"
                         font.pixelSize: 13
                         font.weight: Font.DemiBold
@@ -331,16 +368,46 @@ ApplicationWindow {
                 anchors.margins: 24
                 spacing: 18
 
-                // Header
-                RowLayout {
+                // Header with Title and Close X Button
+                Item {
                     Layout.fillWidth: true
+                    Layout.preferredHeight: 30
+
                     Label {
-                        text: appCtrl.strings.settings_title
+                        anchors.left: parent.left
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: tr("settings_title")
                         font.pixelSize: 17
                         font.weight: Font.DemiBold
                         font.family: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
                         color: "#fafafa"
-                        Layout.fillWidth: true
+                    }
+
+                    Rectangle {
+                        anchors.right: parent.right
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: 28
+                        height: 28
+                        radius: 6
+                        color: closeXMouse.containsPress ? "#27272a" : (closeXMouse.containsMouse ? "#1f1f23" : "transparent")
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: "✕"
+                            font.pixelSize: 12
+                            color: "#a1a1aa"
+                        }
+
+                        MouseArea {
+                            id: closeXMouse
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: {
+                                root.showSettings = false
+                                titleInput.forceActiveFocus()
+                            }
+                        }
                     }
                 }
 
@@ -356,7 +423,7 @@ ApplicationWindow {
                     spacing: 8
 
                     Label {
-                        text: appCtrl.strings.language_label
+                        text: tr("language_label")
                         font.pixelSize: 12
                         font.weight: Font.Medium
                         color: "#a1a1aa"
@@ -374,25 +441,27 @@ ApplicationWindow {
                             anchors.fill: parent
                             spacing: 0
 
+                            property string currentLang: (ctrl && ctrl.language) ? ctrl.language : "es"
+
                             // Spanish
                             Rectangle {
                                 Layout.fillWidth: true
                                 Layout.fillHeight: true
                                 radius: 6
-                                color: appCtrl.language === "es" ? "#27272a" : "transparent"
+                                color: parent.currentLang === "es" ? "#27272a" : "transparent"
 
                                 Text {
                                     anchors.centerIn: parent
                                     text: "Español"
-                                    color: appCtrl.language === "es" ? "#fafafa" : "#71717a"
+                                    color: parent.parent.currentLang === "es" ? "#fafafa" : "#71717a"
                                     font.pixelSize: 12
-                                    font.weight: appCtrl.language === "es" ? Font.DemiBold : Font.Normal
+                                    font.weight: parent.parent.currentLang === "es" ? Font.DemiBold : Font.Normal
                                 }
 
                                 MouseArea {
                                     anchors.fill: parent
                                     cursorShape: Qt.PointingHandCursor
-                                    onClicked: appCtrl.setLanguage("es")
+                                    onClicked: if (ctrl) ctrl.setLanguage("es")
                                 }
                             }
 
@@ -401,20 +470,20 @@ ApplicationWindow {
                                 Layout.fillWidth: true
                                 Layout.fillHeight: true
                                 radius: 6
-                                color: appCtrl.language === "en" ? "#27272a" : "transparent"
+                                color: parent.currentLang === "en" ? "#27272a" : "transparent"
 
                                 Text {
                                     anchors.centerIn: parent
                                     text: "English"
-                                    color: appCtrl.language === "en" ? "#fafafa" : "#71717a"
+                                    color: parent.parent.currentLang === "en" ? "#fafafa" : "#71717a"
                                     font.pixelSize: 12
-                                    font.weight: appCtrl.language === "en" ? Font.DemiBold : Font.Normal
+                                    font.weight: parent.parent.currentLang === "en" ? Font.DemiBold : Font.Normal
                                 }
 
                                 MouseArea {
                                     anchors.fill: parent
                                     cursorShape: Qt.PointingHandCursor
-                                    onClicked: appCtrl.setLanguage("en")
+                                    onClicked: if (ctrl) ctrl.setLanguage("en")
                                 }
                             }
                         }
@@ -427,7 +496,7 @@ ApplicationWindow {
                     spacing: 8
 
                     Label {
-                        text: appCtrl.strings.output_folder_label
+                        text: tr("output_folder_label")
                         font.pixelSize: 12
                         font.weight: Font.Medium
                         color: "#a1a1aa"
@@ -447,7 +516,7 @@ ApplicationWindow {
                             anchors.rightMargin: 10
 
                             Text {
-                                text: appCtrl.targetDirectory
+                                text: (ctrl && ctrl.targetDirectory) ? ctrl.targetDirectory : "obs_output"
                                 color: "#d4d4d8"
                                 font.pixelSize: 11
                                 elide: Text.ElideMiddle
@@ -470,7 +539,7 @@ ApplicationWindow {
 
                             Text {
                                 anchors.centerIn: parent
-                                text: appCtrl.strings.browse_btn
+                                text: tr("browse_btn")
                                 color: "#d4d4d8"
                                 font.pixelSize: 11
                                 font.weight: Font.Medium
@@ -481,12 +550,12 @@ ApplicationWindow {
                                 anchors.fill: parent
                                 hoverEnabled: true
                                 cursorShape: Qt.PointingHandCursor
-                                onClicked: appCtrl.selectDirectory()
+                                onClicked: if (ctrl) ctrl.selectDirectory()
                             }
                         }
 
                         Rectangle {
-                            visible: appCtrl.isCustomDirectory
+                            visible: (ctrl && ctrl.isCustomDirectory) ? true : false
                             Layout.preferredWidth: 85
                             height: 32
                             radius: 6
@@ -496,7 +565,7 @@ ApplicationWindow {
 
                             Text {
                                 anchors.centerIn: parent
-                                text: appCtrl.strings.reset_btn
+                                text: tr("reset_btn")
                                 color: "#a1a1aa"
                                 font.pixelSize: 11
                             }
@@ -506,7 +575,7 @@ ApplicationWindow {
                                 anchors.fill: parent
                                 hoverEnabled: true
                                 cursorShape: Qt.PointingHandCursor
-                                onClicked: appCtrl.resetDirectory()
+                                onClicked: if (ctrl) ctrl.resetDirectory()
                             }
                         }
                     }
@@ -523,7 +592,7 @@ ApplicationWindow {
 
                     Text {
                         anchors.centerIn: parent
-                        text: appCtrl.strings.close_btn
+                        text: tr("close_btn")
                         color: "#09090b"
                         font.pixelSize: 12
                         font.weight: Font.DemiBold
