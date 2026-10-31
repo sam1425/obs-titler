@@ -6,15 +6,13 @@ import QtQuick.Window 2.15
 ApplicationWindow {
     id: root
     visible: true
-    width: 460
-    height: 410
-    minimumWidth: 400
-    minimumHeight: 370
+    width: 470
+    height: 440
+    minimumWidth: 410
+    minimumHeight: 400
 
-    // Reference to Python controller with null-safety
     property var ctrl: (typeof appCtrl !== "undefined" && appCtrl) ? appCtrl : null
 
-    // Safe translation lookup helper
     function tr(key) {
         if (ctrl && ctrl.strings && ctrl.strings[key] !== undefined) {
             return ctrl.strings[key];
@@ -22,23 +20,30 @@ ApplicationWindow {
         return defaultStrings[key] || "";
     }
 
-    // Fallback strings so QML never throws TypeErrors during initial load
     readonly property var defaultStrings: ({
-        title: "Detalles del Sermón",
+        title: "Detalles del Servicio",
         subtitle: "Actualiza fuentes de texto en vivo en OBS Studio",
-        sermon_title_label: "Título",
-        sermon_title_placeholder: "Ingresa el título del sermón...",
-        speaker_label: "Orador / Persona que habla",
-        speaker_placeholder: "Ingresa el nombre del orador...",
+        tab_announcements: "Avisos",
+        tab_sermonette: "Sermoncillo",
+        tab_sermon: "Sermón",
+        announcements_speaker_label: "Persona encargada de avisos",
+        announcements_speaker_placeholder: "Ingresa el nombre...",
+        sermonette_title_label: "Título del sermoncillo / mensaje",
+        sermonette_title_placeholder: "Tema del sermoncillo...",
+        sermonette_speaker_label: "Orador del sermoncillo",
+        sermonette_speaker_placeholder: "Nombre del orador...",
+        sermon_title_label: "Título del sermón principal",
+        sermon_title_placeholder: "Tema del sermón...",
+        sermon_speaker_label: "Predicador / Orador",
+        sermon_speaker_placeholder: "Nombre del predicador...",
         clear_btn: "Limpiar",
         save_btn: "Guardar en OBS",
-        saved_toast: "Guardado en OBS",
+        saved_toast: "Archivos guardados en OBS",
         error_toast: "Error al guardar archivos",
         settings_btn: "Ajustes",
         settings_title: "Configuración",
         language_label: "Idioma",
         output_folder_label: "Carpeta de salida OBS",
-        default_folder_hint: "(Por defecto: obs_output)",
         browse_btn: "Examinar...",
         reset_btn: "Restablecer",
         close_btn: "Listo"
@@ -47,24 +52,85 @@ ApplicationWindow {
     title: tr("title")
     color: "#09090b"
 
-    Component.onCompleted: titleInput.forceActiveFocus()
-
+    property string activeTab: "sermon" // "announcements", "sermonette", "sermon"
     property bool showSettings: false
+
+    Component.onCompleted: focusActiveTabInput()
+
+    function focusActiveTabInput() {
+        if (activeTab === "announcements") annSpeakerInput.inputItem.forceActiveFocus();
+        else if (activeTab === "sermonette") srmTitleInput.inputItem.forceActiveFocus();
+        else mainTitleInput.inputItem.forceActiveFocus();
+    }
+
+    // DRY Reusable Form Input Field Component
+    component FormInput: ColumnLayout {
+        id: comp
+        property alias labelText: lbl.text
+        property alias placeholderText: ph.text
+        property alias text: inp.text
+        property alias inputItem: inp
+        signal accepted()
+
+        spacing: 7
+        Layout.fillWidth: true
+
+        Label {
+            id: lbl
+            font.pixelSize: 13
+            font.weight: Font.Medium
+            font.family: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+            color: "#a1a1aa"
+        }
+
+        Rectangle {
+            Layout.fillWidth: true
+            height: 42
+            radius: 8
+            color: "#18181b"
+            border.width: 1
+            border.color: inp.activeFocus ? "#52525b" : "#27272a"
+
+            Behavior on border.color { ColorAnimation { duration: 100 } }
+
+            TextInput {
+                id: inp
+                anchors.fill: parent
+                anchors.leftMargin: 12
+                anchors.rightMargin: 12
+                verticalAlignment: TextInput.AlignVCenter
+                font.pixelSize: 14
+                font.family: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+                color: "#fafafa"
+                selectByMouse: true
+                activeFocusOnTab: true
+                onAccepted: comp.accepted()
+
+                Text {
+                    id: ph
+                    color: "#52525b"
+                    font.pixelSize: 14
+                    visible: !inp.text && !inp.activeFocus
+                    anchors.fill: parent
+                    verticalAlignment: Text.AlignVCenter
+                }
+            }
+        }
+    }
 
     Item {
         anchors.fill: parent
-        anchors.margins: 32
+        anchors.margins: 30
 
-        // Main View (Inputs & Actions)
         ColumnLayout {
             anchors.fill: parent
-            spacing: 20
+            spacing: 16
             opacity: root.showSettings ? 0.2 : 1.0
             enabled: !root.showSettings
 
             Behavior on opacity { NumberAnimation { duration: 150 } }
 
-            // Header - Using direct anchors to firmly lock settings button to the right edge
+            // Header - Settings icon pinned to right edge
             Item {
                 Layout.fillWidth: true
                 Layout.preferredHeight: Math.max(headerTextCol.height, settingsBtn.height)
@@ -93,7 +159,6 @@ ApplicationWindow {
                     }
                 }
 
-                // Settings Gear Button - Anchored to the far right
                 Rectangle {
                     id: settingsBtn
                     anchors.right: parent.right
@@ -145,108 +210,114 @@ ApplicationWindow {
                 }
             }
 
-            // Form Inputs
-            ColumnLayout {
+            // Segmented Service Switcher (Avisos | Sermoncillo | Sermón)
+            Rectangle {
                 Layout.fillWidth: true
-                spacing: 16
+                height: 36
+                radius: 8
+                color: "#141417"
+                border.color: "#222226"
+                border.width: 1
 
-                // Sermon Title Field
-                ColumnLayout {
-                    Layout.fillWidth: true
-                    spacing: 7
+                RowLayout {
+                    anchors.fill: parent
+                    spacing: 0
 
-                    Label {
-                        text: tr("sermon_title_label")
-                        font.pixelSize: 13
-                        font.weight: Font.Medium
-                        font.family: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
-                        color: "#a1a1aa"
-                    }
+                    Repeater {
+                        model: [
+                            { id: "announcements", labelKey: "tab_announcements" },
+                            { id: "sermonette",    labelKey: "tab_sermonette" },
+                            { id: "sermon",        labelKey: "tab_sermon" }
+                        ]
 
-                    Rectangle {
-                        Layout.fillWidth: true
-                        height: 42
-                        radius: 8
-                        color: "#18181b"
-                        border.width: 1
-                        border.color: titleInput.activeFocus ? "#52525b" : "#27272a"
+                        Rectangle {
+                            Layout.fillWidth: true
+                            Layout.fillHeight: true
+                            radius: 7
+                            color: root.activeTab === modelData.id ? "#27272a" : "transparent"
 
-                        Behavior on border.color { ColorAnimation { duration: 100 } }
-
-                        TextInput {
-                            id: titleInput
-                            anchors.fill: parent
-                            anchors.leftMargin: 12
-                            anchors.rightMargin: 12
-                            verticalAlignment: TextInput.AlignVCenter
-                            font.pixelSize: 14
-                            font.family: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
-                            color: "#fafafa"
-                            selectByMouse: true
-                            activeFocusOnTab: true
-                            KeyNavigation.tab: speakerInput
-                            KeyNavigation.backtab: saveBtn
-                            onAccepted: speakerInput.forceActiveFocus()
+                            Behavior on color { ColorAnimation { duration: 100 } }
 
                             Text {
-                                text: tr("sermon_title_placeholder")
-                                color: "#52525b"
-                                font.pixelSize: 14
-                                visible: !titleInput.text && !titleInput.activeFocus
+                                anchors.centerIn: parent
+                                text: root.tr(modelData.labelKey)
+                                color: root.activeTab === modelData.id ? "#fafafa" : "#71717a"
+                                font.pixelSize: 12
+                                font.weight: root.activeTab === modelData.id ? Font.DemiBold : Font.Normal
+                                font.family: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+                            }
+
+                            MouseArea {
                                 anchors.fill: parent
-                                verticalAlignment: Text.AlignVCenter
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: {
+                                    root.activeTab = modelData.id
+                                    root.focusActiveTabInput()
+                                }
                             }
                         }
                     }
                 }
+            }
 
-                // Speaker Field
+            // Form Panels (DRY instances of FormInput)
+            Item {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 135
+
+                // 1. Announcements: only speaker name needed
                 ColumnLayout {
-                    Layout.fillWidth: true
-                    spacing: 7
+                    anchors.fill: parent
+                    spacing: 14
+                    visible: root.activeTab === "announcements"
 
-                    Label {
-                        text: tr("speaker_label")
-                        font.pixelSize: 13
-                        font.weight: Font.Medium
-                        font.family: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
-                        color: "#a1a1aa"
+                    FormInput {
+                        id: annSpeakerInput
+                        labelText: root.tr("announcements_speaker_label")
+                        placeholderText: root.tr("announcements_speaker_placeholder")
+                        onAccepted: saveBtn.triggerSave()
+                    }
+                }
+
+                // 2. Sermoncillo / Short Message: title & speaker
+                ColumnLayout {
+                    anchors.fill: parent
+                    spacing: 12
+                    visible: root.activeTab === "sermonette"
+
+                    FormInput {
+                        id: srmTitleInput
+                        labelText: root.tr("sermonette_title_label")
+                        placeholderText: root.tr("sermonette_title_placeholder")
+                        onAccepted: srmSpeakerInput.inputItem.forceActiveFocus()
                     }
 
-                    Rectangle {
-                        Layout.fillWidth: true
-                        height: 42
-                        radius: 8
-                        color: "#18181b"
-                        border.width: 1
-                        border.color: speakerInput.activeFocus ? "#52525b" : "#27272a"
+                    FormInput {
+                        id: srmSpeakerInput
+                        labelText: root.tr("sermonette_speaker_label")
+                        placeholderText: root.tr("sermonette_speaker_placeholder")
+                        onAccepted: saveBtn.triggerSave()
+                    }
+                }
 
-                        Behavior on border.color { ColorAnimation { duration: 100 } }
+                // 3. Main Sermon: title & speaker
+                ColumnLayout {
+                    anchors.fill: parent
+                    spacing: 12
+                    visible: root.activeTab === "sermon"
 
-                        TextInput {
-                            id: speakerInput
-                            anchors.fill: parent
-                            anchors.leftMargin: 12
-                            anchors.rightMargin: 12
-                            verticalAlignment: TextInput.AlignVCenter
-                            font.pixelSize: 14
-                            font.family: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
-                            color: "#fafafa"
-                            selectByMouse: true
-                            activeFocusOnTab: true
-                            KeyNavigation.tab: clearBtn
-                            KeyNavigation.backtab: titleInput
-                            onAccepted: saveBtn.triggerSave()
+                    FormInput {
+                        id: mainTitleInput
+                        labelText: root.tr("sermon_title_label")
+                        placeholderText: root.tr("sermon_title_placeholder")
+                        onAccepted: mainSpeakerInput.inputItem.forceActiveFocus()
+                    }
 
-                            Text {
-                                text: tr("speaker_placeholder")
-                                color: "#52525b"
-                                font.pixelSize: 14
-                                visible: !speakerInput.text && !speakerInput.activeFocus
-                                anchors.fill: parent
-                                verticalAlignment: Text.AlignVCenter
-                            }
-                        }
+                    FormInput {
+                        id: mainSpeakerInput
+                        labelText: root.tr("sermon_speaker_label")
+                        placeholderText: root.tr("sermon_speaker_placeholder")
+                        onAccepted: saveBtn.triggerSave()
                     }
                 }
             }
@@ -268,16 +339,18 @@ ApplicationWindow {
                     border.color: clearBtn.activeFocus ? "#71717a" : "#27272a"
                     border.width: 1
                     activeFocusOnTab: true
-                    KeyNavigation.tab: saveBtn
-                    KeyNavigation.backtab: speakerInput
-
-                    Behavior on color { ColorAnimation { duration: 80 } }
-                    Behavior on border.color { ColorAnimation { duration: 80 } }
 
                     function triggerClear() {
-                        titleInput.text = ""
-                        speakerInput.text = ""
-                        titleInput.forceActiveFocus()
+                        if (root.activeTab === "announcements") {
+                            annSpeakerInput.text = "";
+                        } else if (root.activeTab === "sermonette") {
+                            srmTitleInput.text = "";
+                            srmSpeakerInput.text = "";
+                        } else {
+                            mainTitleInput.text = "";
+                            mainSpeakerInput.text = "";
+                        }
+                        root.focusActiveTabInput();
                     }
 
                     Keys.onReturnPressed: triggerClear()
@@ -285,7 +358,7 @@ ApplicationWindow {
 
                     Text {
                         anchors.centerIn: parent
-                        text: tr("clear_btn")
+                        text: root.tr("clear_btn")
                         color: clearBtn.activeFocus ? "#ffffff" : "#a1a1aa"
                         font.pixelSize: 13
                         font.weight: Font.Medium
@@ -301,7 +374,7 @@ ApplicationWindow {
                     }
                 }
 
-                // Save Button
+                // Save to OBS Button
                 Rectangle {
                     id: saveBtn
                     Layout.fillWidth: true
@@ -311,17 +384,21 @@ ApplicationWindow {
                     border.color: saveBtn.activeFocus ? "#3b82f6" : "transparent"
                     border.width: saveBtn.activeFocus ? 2 : 0
                     activeFocusOnTab: true
-                    KeyNavigation.tab: titleInput
-                    KeyNavigation.backtab: clearBtn
-
-                    Behavior on color { ColorAnimation { duration: 80 } }
 
                     function triggerSave() {
-                        var success = ctrl ? ctrl.saveToFiles(titleInput.text, speakerInput.text) : true
+                        var success = root.ctrl ? root.ctrl.saveAll(
+                            annSpeakerInput.text,
+                            srmTitleInput.text,
+                            srmSpeakerInput.text,
+                            mainTitleInput.text,
+                            mainSpeakerInput.text,
+                            root.activeTab
+                        ) : true;
+
                         if (success) {
-                            toast.show(tr("saved_toast"))
+                            toast.show(root.tr("saved_toast"));
                         } else {
-                            toast.showError(tr("error_toast"))
+                            toast.showError(root.tr("error_toast"));
                         }
                     }
 
@@ -330,7 +407,7 @@ ApplicationWindow {
 
                     Text {
                         anchors.centerIn: parent
-                        text: tr("save_btn")
+                        text: root.tr("save_btn")
                         color: "#09090b"
                         font.pixelSize: 13
                         font.weight: Font.DemiBold
@@ -368,7 +445,7 @@ ApplicationWindow {
                 anchors.margins: 24
                 spacing: 18
 
-                // Header with Title and Close X Button
+                // Header with Close X
                 Item {
                     Layout.fillWidth: true
                     Layout.preferredHeight: 30
@@ -376,7 +453,7 @@ ApplicationWindow {
                     Label {
                         anchors.left: parent.left
                         anchors.verticalCenter: parent.verticalCenter
-                        text: tr("settings_title")
+                        text: root.tr("settings_title")
                         font.pixelSize: 17
                         font.weight: Font.DemiBold
                         font.family: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
@@ -405,7 +482,7 @@ ApplicationWindow {
                             cursorShape: Qt.PointingHandCursor
                             onClicked: {
                                 root.showSettings = false
-                                titleInput.forceActiveFocus()
+                                root.focusActiveTabInput()
                             }
                         }
                     }
@@ -417,13 +494,13 @@ ApplicationWindow {
                     color: "#222226"
                 }
 
-                // Language Segmented Control
+                // Language Selector
                 ColumnLayout {
                     Layout.fillWidth: true
                     spacing: 8
 
                     Label {
-                        text: tr("language_label")
+                        text: root.tr("language_label")
                         font.pixelSize: 12
                         font.weight: Font.Medium
                         color: "#a1a1aa"
@@ -441,7 +518,7 @@ ApplicationWindow {
                             anchors.fill: parent
                             spacing: 0
 
-                            property string currentLang: (ctrl && ctrl.language) ? ctrl.language : "es"
+                            property string currentLang: (root.ctrl && root.ctrl.language) ? root.ctrl.language : "es"
 
                             // Spanish
                             Rectangle {
@@ -461,7 +538,7 @@ ApplicationWindow {
                                 MouseArea {
                                     anchors.fill: parent
                                     cursorShape: Qt.PointingHandCursor
-                                    onClicked: if (ctrl) ctrl.setLanguage("es")
+                                    onClicked: if (root.ctrl) root.ctrl.setLanguage("es")
                                 }
                             }
 
@@ -483,7 +560,7 @@ ApplicationWindow {
                                 MouseArea {
                                     anchors.fill: parent
                                     cursorShape: Qt.PointingHandCursor
-                                    onClicked: if (ctrl) ctrl.setLanguage("en")
+                                    onClicked: if (root.ctrl) root.ctrl.setLanguage("en")
                                 }
                             }
                         }
@@ -496,7 +573,7 @@ ApplicationWindow {
                     spacing: 8
 
                     Label {
-                        text: tr("output_folder_label")
+                        text: root.tr("output_folder_label")
                         font.pixelSize: 12
                         font.weight: Font.Medium
                         color: "#a1a1aa"
@@ -516,7 +593,7 @@ ApplicationWindow {
                             anchors.rightMargin: 10
 
                             Text {
-                                text: (ctrl && ctrl.targetDirectory) ? ctrl.targetDirectory : "obs_output"
+                                text: (root.ctrl && root.ctrl.targetDirectory) ? root.ctrl.targetDirectory : "obs_output"
                                 color: "#d4d4d8"
                                 font.pixelSize: 11
                                 elide: Text.ElideMiddle
@@ -539,7 +616,7 @@ ApplicationWindow {
 
                             Text {
                                 anchors.centerIn: parent
-                                text: tr("browse_btn")
+                                text: root.tr("browse_btn")
                                 color: "#d4d4d8"
                                 font.pixelSize: 11
                                 font.weight: Font.Medium
@@ -550,12 +627,12 @@ ApplicationWindow {
                                 anchors.fill: parent
                                 hoverEnabled: true
                                 cursorShape: Qt.PointingHandCursor
-                                onClicked: if (ctrl) ctrl.selectDirectory()
+                                onClicked: if (root.ctrl) root.ctrl.selectDirectory()
                             }
                         }
 
                         Rectangle {
-                            visible: (ctrl && ctrl.isCustomDirectory) ? true : false
+                            visible: (root.ctrl && root.ctrl.isCustomDirectory) ? true : false
                             Layout.preferredWidth: 85
                             height: 32
                             radius: 6
@@ -565,7 +642,7 @@ ApplicationWindow {
 
                             Text {
                                 anchors.centerIn: parent
-                                text: tr("reset_btn")
+                                text: root.tr("reset_btn")
                                 color: "#a1a1aa"
                                 font.pixelSize: 11
                             }
@@ -575,7 +652,7 @@ ApplicationWindow {
                                 anchors.fill: parent
                                 hoverEnabled: true
                                 cursorShape: Qt.PointingHandCursor
-                                onClicked: if (ctrl) ctrl.resetDirectory()
+                                onClicked: if (root.ctrl) root.ctrl.resetDirectory()
                             }
                         }
                     }
@@ -583,7 +660,7 @@ ApplicationWindow {
 
                 Item { Layout.fillHeight: true }
 
-                // Close Settings Button
+                // Done Button
                 Rectangle {
                     Layout.fillWidth: true
                     height: 36
@@ -592,7 +669,7 @@ ApplicationWindow {
 
                     Text {
                         anchors.centerIn: parent
-                        text: tr("close_btn")
+                        text: root.tr("close_btn")
                         color: "#09090b"
                         font.pixelSize: 12
                         font.weight: Font.DemiBold
@@ -605,7 +682,7 @@ ApplicationWindow {
                         cursorShape: Qt.PointingHandCursor
                         onClicked: {
                             root.showSettings = false
-                            titleInput.forceActiveFocus()
+                            root.focusActiveTabInput()
                         }
                     }
                 }
