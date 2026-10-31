@@ -2,10 +2,15 @@ import sys
 import os
 from pathlib import Path
 
+# Suppress harmless internal QtSvg buffer warnings when loading Linux system icons
+os.environ.setdefault("QT_LOGGING_RULES", "qt.svg.draw.warning=false;qt.svg.warning=false")
+
 try:
-    from PySide6.QtCore import QObject, Slot, Property, Signal, QSettings
+    from PySide6.QtCore import QObject, Slot, Property, Signal, QSettings, QLoggingCategory
     from PySide6.QtWidgets import QApplication, QFileDialog
     from PySide6.QtQml import QQmlApplicationEngine
+
+    QLoggingCategory.setFilterRules("qt.svg.*=false\nqt.svg.draw.*=false")
 except ImportError:
     raise SystemExit("Error: PySide6 required. Run: uv add pyside6")
 
