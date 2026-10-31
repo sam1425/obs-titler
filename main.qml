@@ -23,7 +23,7 @@ ApplicationWindow {
     readonly property var defaultStrings: ({
         title: "Detalles del Servicio",
         subtitle: "Actualiza fuentes de texto en vivo en OBS Studio",
-        tab_announcements: "Avisos",
+        tab_announcements: "Anuncios",
         tab_sermonette: "Sermoncillo",
         tab_sermon: "Sermón",
         announcements_speaker_label: "Persona encargada de avisos",
@@ -52,7 +52,7 @@ ApplicationWindow {
     title: tr("title")
     color: "#09090b"
 
-    property string activeTab: "sermon" // "announcements", "sermonette", "sermon"
+    property string activeTab: "sermonette" // "announcements", "sermonette", "sermon"
     property bool showSettings: false
 
     Component.onCompleted: focusActiveTabInput()
@@ -225,8 +225,8 @@ ApplicationWindow {
 
                     Repeater {
                         model: [
-                            { id: "announcements", labelKey: "tab_announcements" },
                             { id: "sermonette",    labelKey: "tab_sermonette" },
+                            { id: "announcements", labelKey: "tab_announcements" },
                             { id: "sermon",        labelKey: "tab_sermon" }
                         ]
 

@@ -19,8 +19,8 @@ TRANSLATIONS = {
     "es": {
         "title": "Detalles del Servicio",
         "subtitle": "Actualiza fuentes de texto en vivo en OBS Studio",
-        "tab_announcements": "Avisos",
         "tab_sermonette": "Sermoncillo",
+        "tab_announcements": "Anuncios",
         "tab_sermon": "Sermón",
         "announcements_speaker_label": "Persona encargada de avisos",
         "announcements_speaker_placeholder": "Ingresa el nombre...",
@@ -47,8 +47,8 @@ TRANSLATIONS = {
     "en": {
         "title": "Service Details",
         "subtitle": "Updates text sources live in OBS Studio",
-        "tab_announcements": "Announcements",
         "tab_sermonette": "Sermonette",
+        "tab_announcements": "Announcements",
         "tab_sermon": "Main Sermon",
         "announcements_speaker_label": "Announcements speaker",
         "announcements_speaker_placeholder": "Enter speaker name...",
