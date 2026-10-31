@@ -1,0 +1,17 @@
+# Virtual environments
+.venv/
+venv/
+ENV/
+
+# Python bytecode & caches
+__pycache__/
+*.py[cod]
+*$py.class
+
+# PyInstaller build outputs & standalone binaries
+dist/
+build/
+*.spec
+
+# Application runtime text output
+obs_output/
