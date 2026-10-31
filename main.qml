@@ -59,8 +59,9 @@ ApplicationWindow {
                 // Settings Gear Button
                 Rectangle {
                     id: settingsBtn
-                    width: 36
-                    height: 36
+                    Layout.preferredWidth: 34
+                    Layout.preferredHeight: 34
+                    Layout.alignment: Qt.AlignRight | Qt.AlignTop
                     radius: 8
                     color: settingsMouse.containsPress ? "#27272a" : (settingsMouse.containsMouse ? "#1f1f23" : "#141417")
                     border.color: "#27272a"
